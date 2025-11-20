@@ -25,8 +25,8 @@ func TestNew(t *testing.T) {
 func TestPack(t *testing.T) {
 	// Create mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/pack" {
-			t.Errorf("expected path /api/v1/pack, got %s", r.URL.Path)
+		if r.URL.Path != "/v1/pack" {
+			t.Errorf("expected path /v1/pack, got %s", r.URL.Path)
 		}
 		if r.Method != "POST" {
 			t.Errorf("expected POST method, got %s", r.Method)
