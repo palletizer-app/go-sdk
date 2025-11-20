@@ -1,11 +1,15 @@
-# Palletizer Go Client
+# Palletizer Go SDK
 
-The official Go client library for the Palletizer API hosted at https://palletizer.app/
+[![Go Reference](https://pkg.go.dev/badge/github.com/palletizer-app/sdk.svg)](https://pkg.go.dev/github.com/palletizer-app/sdk)
+[![Go Report Card](https://goreportcard.com/badge/github.com/palletizer-app/sdk)](https://goreportcard.com/report/github.com/palletizer-app/sdk)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Official Go client library for the [Palletizer.app](https://palletizer.app) API - a high-performance 3D bin packing service for warehouse and logistics operations.
 
 ## Installation
 
 ```bash
-go get github.com/yourusername/palletizer/pkg/client
+go get github.com/palletizer-app/sdk
 ```
 
 ## Quick Start
@@ -18,34 +22,34 @@ import (
     "fmt"
     "log"
 
-    "github.com/yourusername/palletizer/pkg/client"
+    "github.com/palletizer-app/sdk"
 )
 
 func main() {
     // Create client
-    c := client.New("https://palletizer.app")
+    client := palletizer.New("https://api.palletizer.app")
 
     // Create packing request
-    request := &client.PackingRequest{
-        Cartons: []client.Carton{
+    request := &palletizer.PackingRequest{
+        Cartons: []palletizer.Carton{
             {
                 ID:            "BOX001",
-                Length:        609.6,    // 24 inches in mm
-                Width:         457.2,    // 18 inches in mm
-                Height:        406.4,    // 16 inches in mm
-                Weight:        18143.68, // 40 lbs in grams
+                Length:        palletizer.InchesToMM(24),    // 24 inches
+                Width:         palletizer.InchesToMM(18),    // 18 inches
+                Height:        palletizer.InchesToMM(16),    // 16 inches
+                Weight:        palletizer.PoundsToGrams(40), // 40 lbs
                 Quantity:      30,
                 AllowRotation: true,
             },
         },
-        PalletConstraints: client.StandardPallet(),
-        PackingOptions: client.PackingOptions{
+        PalletConstraints: palletizer.StandardPallet(),
+        PackingOptions: palletizer.PackingOptions{
             SupportPercentage: 80.0,
         },
     }
 
     // Pack the cartons
-    response, err := c.Pack(context.Background(), request)
+    response, err := client.Pack(context.Background(), request)
     if err != nil {
         log.Fatal(err)
     }
@@ -61,65 +65,72 @@ func main() {
 
 ## Using Imperial Units
 
-The API uses metric units (millimeters and grams), but the client provides helper functions for imperial units:
+The API uses metric units (millimeters and grams), but the SDK provides helper functions:
 
 ```go
-carton := client.Carton{
+carton := palletizer.Carton{
     ID:            "BOX001",
-    Length:        client.InchesToMM(24),    // 24 inches
-    Width:         client.InchesToMM(18),    // 18 inches
-    Height:        client.InchesToMM(16),    // 16 inches
-    Weight:        client.PoundsToGrams(40), // 40 pounds
+    Length:        palletizer.InchesToMM(24),    // 24 inches → 609.6 mm
+    Width:         palletizer.InchesToMM(18),    // 18 inches → 457.2 mm
+    Height:        palletizer.InchesToMM(16),    // 16 inches → 406.4 mm
+    Weight:        palletizer.PoundsToGrams(40), // 40 lbs → 18143.68 g
     Quantity:      30,
     AllowRotation: true,
 }
 ```
 
+Convert results back to imperial:
+
+```go
+heightInches := palletizer.MMToInches(pallet.TotalHeight)
+weightPounds := palletizer.GramsToPounds(pallet.TotalWeight)
+```
+
 ## Standard Pallet Sizes
 
 ```go
-// 40x72x48 inch pallet (1500 lbs)
-constraints := client.StandardPallet()
+// 40×72×48 inch pallet (1500 lbs) - most common
+constraints := palletizer.StandardPallet()
 
-// 40x48x48 inch pallet (1500 lbs)
-constraints := client.StandardPallet4048()
+// 40×48×48 inch pallet (1500 lbs)
+constraints := palletizer.StandardPallet4048()
 ```
 
 ## Multiple Carton Types
 
 ```go
-request := &client.PackingRequest{
-    Cartons: []client.Carton{
+request := &palletizer.PackingRequest{
+    Cartons: []palletizer.Carton{
         {
             ID:            "LARGE_BOX",
-            Length:        client.InchesToMM(24),
-            Width:         client.InchesToMM(18),
-            Height:        client.InchesToMM(16),
-            Weight:        client.PoundsToGrams(40),
+            Length:        palletizer.InchesToMM(24),
+            Width:         palletizer.InchesToMM(18),
+            Height:        palletizer.InchesToMM(16),
+            Weight:        palletizer.PoundsToGrams(40),
             Quantity:      20,
             AllowRotation: true,
         },
         {
             ID:            "MEDIUM_BOX",
-            Length:        client.InchesToMM(18),
-            Width:         client.InchesToMM(12),
-            Height:        client.InchesToMM(12),
-            Weight:        client.PoundsToGrams(20),
+            Length:        palletizer.InchesToMM(18),
+            Width:         palletizer.InchesToMM(12),
+            Height:        palletizer.InchesToMM(12),
+            Weight:        palletizer.PoundsToGrams(20),
             Quantity:      30,
             AllowRotation: true,
         },
         {
             ID:            "SMALL_BOX",
-            Length:        client.InchesToMM(12),
-            Width:         client.InchesToMM(8),
-            Height:        client.InchesToMM(8),
-            Weight:        client.PoundsToGrams(10),
+            Length:        palletizer.InchesToMM(12),
+            Width:         palletizer.InchesToMM(8),
+            Height:        palletizer.InchesToMM(8),
+            Weight:        palletizer.PoundsToGrams(10),
             Quantity:      50,
             AllowRotation: true,
         },
     },
-    PalletConstraints: client.StandardPallet(),
-    PackingOptions: client.PackingOptions{
+    PalletConstraints: palletizer.StandardPallet(),
+    PackingOptions: palletizer.PackingOptions{
         SupportPercentage: 80.0,
     },
 }
@@ -128,7 +139,7 @@ request := &client.PackingRequest{
 ## Processing Results
 
 ```go
-response, err := c.Pack(context.Background(), request)
+response, err := client.Pack(context.Background(), request)
 if err != nil {
     log.Fatal(err)
 }
@@ -142,8 +153,8 @@ fmt.Printf("Computation Time: %d ms\n", response.Summary.ComputationTimeMs)
 // Iterate through pallets
 for _, pallet := range response.Pallets {
     fmt.Printf("\nPallet %d:\n", pallet.PalletID)
-    fmt.Printf("  Weight: %.2f lbs\n", client.GramsToPounds(pallet.TotalWeight))
-    fmt.Printf("  Height: %.2f inches\n", client.MMToInches(pallet.TotalHeight))
+    fmt.Printf("  Weight: %.2f lbs\n", palletizer.GramsToPounds(pallet.TotalWeight))
+    fmt.Printf("  Height: %.2f inches\n", palletizer.MMToInches(pallet.TotalHeight))
     fmt.Printf("  Utilization: %.2f%%\n", pallet.UtilizationPercentage)
     fmt.Printf("  Cartons: %d\n", len(pallet.Cartons))
     
@@ -168,7 +179,7 @@ for _, pallet := range response.Pallets {
 ## Health Check
 
 ```go
-health, err := c.Health(context.Background())
+health, err := client.Health(context.Background())
 if err != nil {
     log.Fatal(err)
 }
@@ -178,7 +189,7 @@ fmt.Printf("Status: %s\n", health.Status)
 ## Metrics
 
 ```go
-metrics, err := c.Metrics(context.Background())
+metrics, err := client.Metrics(context.Background())
 if err != nil {
     log.Fatal(err)
 }
@@ -198,7 +209,7 @@ httpClient := &http.Client{
     },
 }
 
-c := client.NewWithHTTPClient("https://palletizer.app", httpClient)
+client := palletizer.NewWithHTTPClient("https://api.palletizer.app", httpClient)
 ```
 
 ## Context and Timeouts
@@ -207,13 +218,13 @@ c := client.NewWithHTTPClient("https://palletizer.app", httpClient)
 ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 defer cancel()
 
-response, err := c.Pack(ctx, request)
+response, err := client.Pack(ctx, request)
 ```
 
 ## Error Handling
 
 ```go
-response, err := c.Pack(context.Background(), request)
+response, err := client.Pack(context.Background(), request)
 if err != nil {
     // Network error or timeout
     log.Printf("Request failed: %v", err)
@@ -242,8 +253,40 @@ if response.Error != "" {
 | `/api/v1/health` | GET | Health check |
 | `/api/v1/metrics` | GET | Service metrics |
 
+## Performance
+
+The Palletizer service provides excellent performance:
+
+- 30 cartons: < 10ms
+- 279 cartons: ~267ms
+- 1,000 cartons: ~1.6 seconds
+- 10,000 cartons: ~86 seconds
+
+Typical space utilization: 85-95%
+
+## Testing
+
+Run the SDK tests:
+
+```bash
+go test -v
+```
+
 ## Support
 
-- Documentation: https://palletizer.app/docs
-- Issues: https://github.com/yourusername/palletizer/issues
-- Email: support@palletizer.app
+- **Website**: https://palletizer.app
+- **Documentation**: https://docs.palletizer.app
+- **Issues**: https://github.com/palletizer-app/sdk/issues
+- **Email**: info@palletizer.app
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+Made with ❤️ by [Palletizer.app](https://palletizer.app)
