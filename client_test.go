@@ -1,4 +1,4 @@
-package client
+package palletizer
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	client := New("https://palletizer.app")
+	client := New()
 	if client == nil {
 		t.Fatal("expected non-nil client")
 	}
-	if client.baseURL != "https://palletizer.app" {
-		t.Errorf("expected baseURL https://palletizer.app, got %s", client.baseURL)
+	if client.baseURL != "https://api.palletizer.app" {
+		t.Errorf("expected baseURL https://api.palletizer.app, got %s", client.baseURL)
 	}
 	if client.httpClient == nil {
 		t.Fatal("expected non-nil httpClient")
@@ -76,7 +76,7 @@ func TestPack(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := New(server.URL)
+	client := NewWithEndpoint(server.URL)
 
 	// Create request
 	request := &PackingRequest{
@@ -115,68 +115,6 @@ func TestPack(t *testing.T) {
 	}
 	if len(response.Pallets) != 1 {
 		t.Errorf("expected 1 pallet in response, got %d", len(response.Pallets))
-	}
-}
-
-func TestHealth(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/health" {
-			t.Errorf("expected path /api/v1/health, got %s", r.URL.Path)
-		}
-		if r.Method != "GET" {
-			t.Errorf("expected GET method, got %s", r.Method)
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(HealthResponse{Status: "healthy"})
-	}))
-	defer server.Close()
-
-	client := New(server.URL)
-	ctx := context.Background()
-
-	health, err := client.Health(ctx)
-	if err != nil {
-		t.Fatalf("Health failed: %v", err)
-	}
-
-	if health.Status != "healthy" {
-		t.Errorf("expected status 'healthy', got '%s'", health.Status)
-	}
-}
-
-func TestMetrics(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/metrics" {
-			t.Errorf("expected path /api/v1/metrics, got %s", r.URL.Path)
-		}
-		if r.Method != "GET" {
-			t.Errorf("expected GET method, got %s", r.Method)
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(MetricsResponse{
-			TotalRequests: 100,
-			TotalCartons:  500,
-			TotalPallets:  50,
-			AverageTimeMs: 10.5,
-		})
-	}))
-	defer server.Close()
-
-	client := New(server.URL)
-	ctx := context.Background()
-
-	metrics, err := client.Metrics(ctx)
-	if err != nil {
-		t.Fatalf("Metrics failed: %v", err)
-	}
-
-	if metrics.TotalRequests != 100 {
-		t.Errorf("expected 100 requests, got %d", metrics.TotalRequests)
-	}
-	if metrics.TotalCartons != 500 {
-		t.Errorf("expected 500 cartons, got %d", metrics.TotalCartons)
 	}
 }
 

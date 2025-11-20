@@ -1,14 +1,13 @@
-// Package client provides a Go client for the Palletizer API.
+// Package palletizer provides a Go client for the Palletizer API.
 //
-// The client can be used to interact with a Palletizer service hosted at
-// https://palletizer.app/ or any other endpoint.
+// The client connects to https://api.palletizer.app by default.
 //
 // Example usage:
 //
-//	client := client.New("https://palletizer.app")
+//	client := palletizer.New()
 //
-//	request := &client.PackingRequest{
-//	    Cartons: []client.Carton{
+//	request := &palletizer.PackingRequest{
+//	    Cartons: []palletizer.Carton{
 //	        {
 //	            ID:            "BOX001",
 //	            Length:        609.6,
@@ -19,8 +18,8 @@
 //	            AllowRotation: true,
 //	        },
 //	    },
-//	    PalletConstraints: client.StandardPallet(),
-//	    PackingOptions: client.PackingOptions{
+//	    PalletConstraints: palletizer.StandardPallet(),
+//	    PackingOptions: palletizer.PackingOptions{
 //	        SupportPercentage: 80.0,
 //	    },
 //	}
@@ -29,7 +28,7 @@
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
-package client
+package palletizer
 
 import (
 	"bytes"
@@ -41,14 +40,26 @@ import (
 	"time"
 )
 
+const defaultAPIURL = "https://api.palletizer.app"
+
 // Client is the Palletizer API client
 type Client struct {
 	baseURL    string
 	httpClient *http.Client
 }
 
-// New creates a new Palletizer API client
-func New(baseURL string) *Client {
+// New creates a new Palletizer API client with the default endpoint
+func New() *Client {
+	return &Client{
+		baseURL: defaultAPIURL,
+		httpClient: &http.Client{
+			Timeout: 120 * time.Second,
+		},
+	}
+}
+
+// NewWithEndpoint creates a client with a custom API endpoint
+func NewWithEndpoint(baseURL string) *Client {
 	return &Client{
 		baseURL: baseURL,
 		httpClient: &http.Client{
@@ -58,9 +69,9 @@ func New(baseURL string) *Client {
 }
 
 // NewWithHTTPClient creates a client with a custom HTTP client
-func NewWithHTTPClient(baseURL string, httpClient *http.Client) *Client {
+func NewWithHTTPClient(httpClient *http.Client) *Client {
 	return &Client{
-		baseURL:    baseURL,
+		baseURL:    defaultAPIURL,
 		httpClient: httpClient,
 	}
 }
@@ -206,56 +217,6 @@ func (c *Client) Pack(ctx context.Context, request *PackingRequest) (*PackingRes
 	}
 
 	return &response, nil
-}
-
-// Health checks if the API is healthy
-func (c *Client) Health(ctx context.Context) (*HealthResponse, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+"/api/v1/health", nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("health check failed with status %d", resp.StatusCode)
-	}
-
-	var health HealthResponse
-	if err := json.NewDecoder(resp.Body).Decode(&health); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return &health, nil
-}
-
-// Metrics retrieves API metrics
-func (c *Client) Metrics(ctx context.Context) (*MetricsResponse, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+"/api/v1/metrics", nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("metrics request failed with status %d", resp.StatusCode)
-	}
-
-	var metrics MetricsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&metrics); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return &metrics, nil
 }
 
 // StandardPallet returns constraints for a standard 40x72x48 inch pallet (1500 lbs)
