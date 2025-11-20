@@ -129,6 +129,7 @@ type PlacedCarton struct {
 	Dimensions  Dimensions `json:"dimensions"`
 	Orientation string     `json:"orientation"`
 	Weight      float64    `json:"weight"`
+	Layer       int        `json:"layer"` // Layer number (0-based)
 }
 
 // Pallet represents a packed pallet
